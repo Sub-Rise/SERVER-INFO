@@ -54,7 +54,7 @@ module.exports = {
                 artist = 'Unknown Artist';
             }
         }
-        
+
         let cleanedArtist = artist.replace(/\s*\([^)]*\)$/, '').trim();
         cleanedArtist = cleanedArtist.replace(/\.\(\d+\)/g, '').trim();
         let cleanedTitle = title;
@@ -85,7 +85,7 @@ module.exports = {
 
         const apiUrl = 'https://lyrics.lewdhutao.my.eu.org/youtube/lyrics';
         const params = { title: cleanedTitle };
-        structuredLog('INFO', '[LyricsCommand] Fetching lyrics', { title: cleanedTitle });
+        structuredLog('info', '[LyricsCommand] Fetching lyrics', { title: cleanedTitle });
 
         try {
             const response = await axios.get(apiUrl, { params });
@@ -115,7 +115,7 @@ module.exports = {
             }
             await interaction.followUp({ embeds: [embed] });
         } catch (error) {
-            structuredLog('ERROR', '[LyricsCommand] API Error', { title: cleanedTitle, error: error.message });
+            structuredLog('error', '[LyricsCommand] API Error', { title: cleanedTitle, error: error.message });
             await interaction.followUp({ content: '歌詞の取得中にエラーが発生しました。', flags: 64 });
         }
     },

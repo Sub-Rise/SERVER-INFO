@@ -26,7 +26,7 @@ module.exports = {
 
         try {
             const results = await youtubePlugin.search(query, {
-                limit: 20,
+                limit: MUSIC.SEARCH_LIMIT,
                 type: 'video',
             });
 
@@ -126,16 +126,16 @@ module.exports = {
                 } catch (collectorError) {
                     structuredLog('error', '[SearchCollector] Error in collect event.', { guildId: interaction.guild.id, customId: i.customId, errorMessage: collectorError.message });
                     if (!i.replied && !i.deferred) {
-                        await i.reply({ content: '処理中にエラーが発生しました。', flags: 64 }).catch(() => {});
+                        await i.reply({ content: '処理中にエラーが発生しました。', flags: 64 }).catch(() => { });
                     } else {
-                        await i.followUp({ content: '処理中にエラーが発生しました。', flags: 64 }).catch(() => {});
+                        await i.followUp({ content: '処理中にエラーが発生しました。', flags: 64 }).catch(() => { });
                     }
                 }
             });
 
             collector.on('end', (collected, reason) => {
                 if (reason !== 'song_selected' && reason !== 'no_voice_channel') {
-                    message.edit({ content: '検索操作がタイムアウトしました。', components: [] }).catch(() => {});
+                    message.edit({ content: '検索操作がタイムアウトしました。', components: [] }).catch(() => { });
                 }
             });
 

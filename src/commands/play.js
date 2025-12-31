@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
 const structuredLog = require('../utils/logger');
 const { clearLeaveTimer } = require('../utils/timers');
+const { getErrorMessage } = require('../utils/distubeErrors');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -89,29 +90,7 @@ module.exports = {
 
         } catch (e) {
             structuredLog('error', '[PlayCommand] DisTube play error.', { query: songArg, userId: interaction.user.id, guildId: interaction.guild.id, errorCode: e.errorCode, errorMessage: e.message, errorName: e.name });
-            let userFriendlyMessage = '再生処理中にエラーが発生しました。';
-            if (e.name === 'DisTubeError') {
-                switch (e.errorCode) {
-                    case 'NO_RESULTS':
-                        userFriendlyMessage = `曲「${songArg}」は見つかりませんでした。`;
-                        break;
-                    case 'UNAVAILABLE':
-                    case 'VIDEO_UNAVAILABLE':
-                        userFriendlyMessage = `曲「${songArg}」は現在利用できません。`;
-                        break;
-                    case 'NOT_SUPPORTED_URL':
-                        userFriendlyMessage = `指定されたURLはサポートされていません。`;
-                        break;
-                    case 'VOICE_CONNECT_FAILED':
-                        userFriendlyMessage = 'ボイスチャンネルへの接続に失敗しました。';
-                        break;
-                    case 'SPOTIFY_API_ERROR':
-                        userFriendlyMessage = `Spotifyの曲またはプレイリストの処理中にエラーが発生しました。`;
-                        break;
-                    default:
-                        userFriendlyMessage = `再生エラーが発生しました (コード: ${e.errorCode})。`;
-                }
-            }
+            const userFriendlyMessage = getErrorMessage(e, songArg);
             try {
                 if (!interaction.replied && !interaction.deferred) {
                     await interaction.reply({ content: userFriendlyMessage, flags: 64 });

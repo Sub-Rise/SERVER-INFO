@@ -18,7 +18,7 @@ module.exports = {
         const shuffleAttempts = queue.songs.length <= 2 ? 1 : 3;
 
         for (let i = 0; i < shuffleAttempts; i++) {
-            queue.shuffle();
+            await queue.shuffle();
             if (shuffleAttempts > 1 && i < shuffleAttempts - 1) {
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
