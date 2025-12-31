@@ -1,0 +1,28 @@
+{
+  "name": "multifunctional-bot",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "deploy": "node src/deploy-commands.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@discordjs/voice": "^0.18.0",
+    "@distube/spotify": "^2.0.2",
+    "@distube/youtube": "^1.0.4",
+    "@distube/yt-dlp": "^2.0.1",
+    "@discordjs/opus": "^0.10.0",
+    "axios": "^1.8.2",
+    "discord.js": "^14.19.3",
+    "distube": "^5.0.7",
+    "dotenv": "^16.4.5",
+    "ffmpeg-static": "^5.2.0",
+    "libsodium-wrappers": "^0.7.15",
+    "tweetnacl": "^1.0.3"
+  }
+}

@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Environment & Config (contains secrets)
+.env
+config.json
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Data files (generated at runtime)
+data/
+managed-panels.json
+
+# AI/IDE rules
+.clinerules/
+.kilocode/
+.roo/
+.windsurf/
+.cursor/
+.kiro/
+.qoder/
+.augment/
+.clinerules/byterover-rules.md
+.kilocode/rules/byterover-rules.md
+.roo/rules/byterover-rules.md
+.windsurf/rules/byterover-rules.md
+.cursor/rules/byterover-rules.mdc
+.kiro/steering/byterover-rules.md
+.qoder/rules/byterover-rules.md
+.augment/rules/byterover-rules.md

@@ -1,0 +1,75 @@
+const { Events } = require('discord.js');
+const structuredLog = require('../../utils/logger');
+const { guildLastTextChannel } = require('../../utils/timers');
+
+module.exports = {
+    name: Events.InteractionCreate,
+    once: false,
+    async execute(client, interaction) {
+        if (!interaction.isChatInputCommand()) return;
+
+        if (!interaction.inGuild()) {
+            await interaction.reply({ content: 'このコマンドはサーバー内でのみ実行できます。' }).catch(err => {
+                structuredLog('warn', 'Failed to reply for DM interaction', {
+                    commandName: interaction.commandName,
+                    userId: interaction.user.id,
+                    errorMessage: err.message
+                });
+            });
+            return;
+        }
+
+        if (!interaction.inCachedGuild()) {
+            await interaction.reply({ content: 'サーバー情報の取得準備中のため、このコマンドは実行できません。少し待ってから再度お試しください。', flags: 64 }).catch(err => {
+                structuredLog('warn', 'Failed to reply for uncached guild interaction', {
+                    commandName: interaction.commandName,
+                    userId: interaction.user.id,
+                    guildId: interaction.guildId,
+                    errorMessage: err.message
+                });
+            });
+            return;
+        }
+
+        // guildLastTextChannel の更新
+        if (interaction.guildId) {
+            guildLastTextChannel.set(interaction.guildId, interaction.channel);
+        }
+
+        const command = client.commands.get(interaction.commandName);
+
+        if (!command) {
+            structuredLog('error', 'Command not found', { commandName: interaction.commandName, userId: interaction.user.id, guildId: interaction.guild?.id });
+            await interaction.reply({ content: '存在しないコマンドです。', flags: 64 }).catch(err => {
+                structuredLog('warn', 'Failed to reply for unknown command', {
+                    commandName: interaction.commandName,
+                    userId: interaction.user.id,
+                    guildId: interaction.guild?.id,
+                    errorMessage: err.message
+                });
+            });
+            return;
+        }
+
+        try {
+            // client インスタンスは interaction に含まれているので、別途渡す必要はない
+            await command.execute(interaction);
+        } catch (error) {
+            structuredLog('error', 'Error executing command', { commandName: interaction.commandName, userId: interaction.user.id, guildId: interaction.guild?.id, errorMessage: error.message, errorStack: error.stack });
+            try {
+                if (interaction.replied || interaction.deferred) {
+                    await interaction.followUp({ content: 'コマンド実行中にエラーが発生しました。', flags: 64 });
+                } else {
+                    await interaction.reply({ content: 'コマンド実行中にエラーが発生しました。', flags: 64 });
+                }
+            } catch (replyError) {
+                structuredLog('warn', 'Failed to send error reply', {
+                    commandName: interaction.commandName,
+                    userId: interaction.user.id,
+                    guildId: interaction.guild?.id,
+                    errorMessage: replyError.message
+                });
+            }
+        }
+    },
+};
