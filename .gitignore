@@ -5,8 +5,9 @@ node_modules/
 .env
 # config.json - 非公開リポジトリのためGitHubに含める
 
-# Logs
-logs/
+# Logs (keep directory, ignore log files)
+logs/**/*.txt
+logs/**/*.log
 *.log
 
 # OS files
@@ -17,9 +18,8 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Data files (generated at runtime)
-data/
-managed-panels.json
+# Data files (keep directory structure)
+# data/ はGitに含める（Wispbyteへのデプロイ用）
 
 # AI/IDE rules
 .clinerules/
