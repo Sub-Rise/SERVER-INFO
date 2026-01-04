@@ -2,22 +2,24 @@
  * ネットワーク関連の設定
  */
 
+const { TIMEOUTS, RETRY } = require('./constants');
+
 // ServerInfoEmbed更新用の設定
 const SERVER_INFO_UPDATE_CONFIG = {
-    // リトライ設定
+    // リトライ設定（constants.js から参照）
     retry: {
-        maxRetries: 3,
-        baseDelay: 1000,      // 1秒
-        maxDelay: 10000,      // 10秒
-        backoffMultiplier: 2,
-        timeoutMs: 15000      // 15秒タイムアウト
+        maxRetries: RETRY.MAX_ATTEMPTS,
+        baseDelay: RETRY.BASE_DELAY,
+        maxDelay: RETRY.MAX_DELAY,
+        backoffMultiplier: RETRY.BACKOFF_MULTIPLIER,
+        timeoutMs: 15000      // 15秒タイムアウト（ServerInfo固有）
     },
-    
-    // デバウンス設定
+
+    // デバウンス設定（constants.js から参照）
     debounce: {
-        delayMs: 15000         // 15秒
+        delayMs: TIMEOUTS.DEBOUNCE_UPDATE
     },
-    
+
     // ログレベル設定
     logging: {
         enableDebugLogs: false,  // debug ログを有効にするかどうか
@@ -50,7 +52,7 @@ const ERROR_CONFIG = {
         'Operation timeout',          // カスタムタイムアウト
         'GuildMembersTimeout'         // メンバー取得タイムアウト
     ],
-    
+
     // 回復不可能なエラー（管理停止対象）
     unrecoverableErrors: [
         'Missing Permissions',        // 権限不足
