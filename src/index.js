@@ -32,7 +32,7 @@ const client = new Client({
 client.commands = new Collection();
 
 const infoUpdater = require('./utils/infoUpdater');
-const { hasManagedMessage } = require('./utils/infoUpdater');
+const { hasManagedMessage, stopManagingForGuildDelete } = infoUpdater;
 
 // --- コマンドハンドラの動的読み込み ---
 const commandsPath = path.join(__dirname, 'commands');
@@ -99,14 +99,7 @@ eventsToUpdate.forEach(event => {
 });
 
 client.on('guildDelete', (guild) => {
-    if (hasManagedMessage(guild.id)) {
-        // Stop managing without trying to update the message since we can't access it anymore
-        const info = infoUpdater.managedMessages.get(guild.id);
-        clearTimeout(info.debounceTimeout);
-        infoUpdater.managedMessages.delete(guild.id);
-        infoUpdater.savePersistentData().catch(err => {
-            structuredLog('error', '[InfoUpdater] Failed to save after guildDelete', { errorMessage: err.message });
-        });
+    if (stopManagingForGuildDelete(guild.id)) {
         structuredLog('info', '[InfoUpdater] Stopped managing panel for left guild', {
             guildName: guild.name,
             guildId: guild.id

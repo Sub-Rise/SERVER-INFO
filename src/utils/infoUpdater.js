@@ -260,12 +260,33 @@ function getManagedMessageInfo(guildId) {
     return { channelId: info.channelId, messageId: info.messageId };
 }
 
+/**
+ * ギルド退出時の管理停止（メッセージ更新なし）
+ * @param {string} guildId - ギルドID
+ * @returns {boolean} - 管理対象だった場合 true
+ */
+function stopManagingForGuildDelete(guildId) {
+    if (!managedMessages.has(guildId)) return false;
+
+    const info = managedMessages.get(guildId);
+    clearTimeout(info.debounceTimeout);
+    managedMessages.delete(guildId);
+
+    savePersistentData().catch(error => {
+        structuredLog('warn', '[InfoUpdater] Failed to save after guildDelete', {
+            errorMessage: error.message
+        });
+    });
+
+    return true;
+}
+
 module.exports = {
     toggleUpdate,
     scheduleUpdate,
-    managedMessages,  // 後方互換性のため維持
     hasManagedMessage,
     getManagedMessageInfo,
+    stopManagingForGuildDelete,
     initializeManagedPanels,
     savePersistentData
 }; 
