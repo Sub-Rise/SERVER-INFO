@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { guildAutoShuffle } = require('../utils/timers');
+const { setAutoShuffle } = require('../utils/musicState');
 const { safeDeferReply } = require('../utils/commandWrapper');
 
 module.exports = {
@@ -27,10 +27,10 @@ module.exports = {
         }
 
         if (mode === 'on') {
-            guildAutoShuffle.set(guildId, true);
+            setAutoShuffle(guildId, true);
             await interaction.followUp({ content: '✅ 自動シャッフルをオンにしました。今後、曲が追加されるたびにキューがシャッフルされます。' });
         } else if (mode === 'off') {
-            guildAutoShuffle.set(guildId, false);
+            setAutoShuffle(guildId, false);
             await interaction.followUp({ content: '❌ 自動シャッフルをオフにしました。' });
         }
     },

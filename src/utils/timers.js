@@ -1,9 +1,9 @@
 const structuredLog = require('./logger');
 const { TIMEOUTS } = require('../config/constants');
+const { guildAutoShuffle, cleanupMusicState } = require('./musicState');
 
 const guildLeaveTimers = new Map();
 const guildLastTextChannel = new Map();
-const guildAutoShuffle = new Map();
 const LEAVE_TIMEOUT_MS = TIMEOUTS.LEAVE_TIMER;
 
 function startLeaveTimer(client, queueOrGuildId, textChannelFromEvent = null) {
@@ -91,8 +91,8 @@ function cleanupGuild(guildId) {
     cleanedCount++;
   }
 
-  if (guildAutoShuffle.has(guildId)) {
-    guildAutoShuffle.delete(guildId);
+  // 音楽状態のクリーンアップは musicState モジュールに委譲
+  if (cleanupMusicState(guildId)) {
     cleanedCount++;
   }
 

@@ -5,7 +5,8 @@
 
 const { EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger.js');
-const { clearLeaveTimer, startLeaveTimer, guildLastTextChannel, guildAutoShuffle } = require('../utils/timers.js');
+const { clearLeaveTimer, startLeaveTimer, guildLastTextChannel } = require('../utils/timers.js');
+const { isAutoShuffleEnabled } = require('../utils/musicState.js');
 const { getErrorMessage, isCriticalError, shouldLeaveVC } = require('../utils/distubeErrors.js');
 const { COLORS } = require('../config/constants.js');
 
@@ -15,7 +16,7 @@ const { COLORS } = require('../config/constants.js');
  * @param {string} context - ログ用コンテキスト（'addSong' or 'addList'）
  */
 async function performAutoShuffle(queue, context) {
-    if (guildAutoShuffle.get(queue.id) !== true || queue.songs.length <= 1) {
+    if (!isAutoShuffleEnabled(queue.id) || queue.songs.length <= 1) {
         return;
     }
 
@@ -56,6 +57,119 @@ async function performAutoShuffle(queue, context) {
 }
 
 /**
+ * DisTubeエラー時のユーザーメッセージ送信
+ * @param {TextChannel|null} channel - 送信先チャンネル
+ * @param {Error} error - エラーオブジェクト
+ * @param {string} userMessage - ユーザー向けメッセージ
+ */
+function sendErrorToUser(channel, error, userMessage) {
+    if (channel && typeof channel.send === 'function') {
+        channel.send(userMessage.slice(0, 1900)).catch(e =>
+            structuredLog('error', '[DisTube Error Handler] Failed to send error message', {
+                guildId: channel?.guild?.id,
+                errorMessage: e.message
+            })
+        );
+        return;
+    }
+
+    // フォールバック: guildLastTextChannel から送信を試みる
+    structuredLog('error', '[DisTube Error] Could not send to provided channel', {
+        userMessageAttempted: userMessage,
+        guildId: error.guildId || channel?.guild?.id
+    });
+
+    const guildId = error.guildId || channel?.guild?.id;
+    if (guildId) {
+        const lastKnownChannel = guildLastTextChannel.get(guildId);
+        if (lastKnownChannel) {
+            lastKnownChannel.send(`音楽機能でエラーが発生しました。詳細: ${(error.message || String(error)).slice(0, 1500)}`)
+                .catch(e => structuredLog('error', '[DisTube Error Handler] Failed to send to fallback channel', {
+                    guildId,
+                    channelId: lastKnownChannel.id,
+                    errorMessage: e.message
+                }));
+        }
+    }
+}
+
+/**
+ * DisTubeエラー時のキュー/VC処理
+ * @param {Client} client - Discordクライアント
+ * @param {string} guildId - ギルドID
+ * @param {boolean} shouldStopQueue - キュー停止が必要か
+ * @param {boolean} shouldLeaveVoice - VC退出が必要か
+ * @param {Error} error - エラーオブジェクト
+ */
+function handleQueueAndVoiceAction(client, guildId, shouldStopQueue, shouldLeaveVoice, error) {
+    const queue = client.distube.getQueue(guildId);
+
+    if (queue) {
+        if (shouldStopQueue) {
+            structuredLog('warn', '[DisTube Error Handler] Stopping queue', { guildId, errorCode: error.errorCode });
+            queue.stop().catch(e =>
+                structuredLog('error', '[DisTube Error Handler] Failed to stop queue', {
+                    guildId,
+                    errorMessage: e.message
+                })
+            );
+        }
+        if (shouldLeaveVoice && queue.voice) {
+            structuredLog('warn', '[DisTube Error Handler] Leaving voice channel', { guildId, errorCode: error.errorCode });
+            queue.voice.leave().catch(e =>
+                structuredLog('error', '[DisTube Error Handler] Failed to leave VC', {
+                    guildId,
+                    errorMessage: e.message
+                })
+            );
+        }
+    } else if (shouldLeaveVoice) {
+        const voiceConnection = client.distube.voices.get(guildId);
+        if (voiceConnection) {
+            structuredLog('warn', '[DisTube Error Handler] Leaving voice channel (no queue)', { guildId, errorCode: error.errorCode });
+            voiceConnection.leave().catch(e =>
+                structuredLog('error', '[DisTube Error Handler] Failed to leave VC', {
+                    guildId,
+                    errorMessage: e.message
+                })
+            );
+        }
+    }
+}
+
+/**
+ * DisTubeグローバルエラーハンドラ
+ * @param {Client} client - Discordクライアント
+ * @param {TextChannel|null} channel - エラー発生チャンネル
+ * @param {Error} error - エラーオブジェクト
+ */
+function handleDisTubeError(client, channel, error) {
+    // ログ出力
+    structuredLog('error', 'DisTube Global Error', {
+        sourceChannelId: channel?.id,
+        guildId: error.guildId || channel?.guild?.id,
+        errorCode: error.errorCode,
+        errorMessage: error.message,
+        errorName: error.name,
+        errorStack: error.stack
+    });
+
+    // ユーティリティ関数でエラーを分析
+    const userMessage = getErrorMessage(error);
+    const shouldStopQueue = isCriticalError(error);
+    const shouldLeaveVoice = shouldLeaveVC(error);
+
+    // ユーザーへのメッセージ送信
+    sendErrorToUser(channel, error, userMessage);
+
+    // キュー/VC処理
+    const guildIdForAction = error.guildId || channel?.guild?.id;
+    if (guildIdForAction) {
+        handleQueueAndVoiceAction(client, guildIdForAction, shouldStopQueue, shouldLeaveVoice, error);
+    }
+}
+
+/**
  * DisTubeイベントリスナーをセットアップ
  * @param {DisTube} distube - DisTubeインスタンス
  * @param {Client} client - Discordクライアント
@@ -77,53 +191,7 @@ function setupDisTubeEvents(distube, client) {
             await performAutoShuffle(queue, 'addList');
         })
         .on('error', (channel, error) => {
-            structuredLog('error', 'DisTube Global Error', {
-                sourceChannelId: channel?.id,
-                guildId: error.guildId || channel?.guild?.id,
-                errorCode: error.errorCode,
-                errorMessage: error.message,
-                errorName: error.name,
-                errorStack: error.stack
-            });
-
-            // distubeErrors.js のユーティリティ関数を使用
-            const userMessage = getErrorMessage(error);
-            const shouldStopQueue = isCriticalError(error);
-            const shouldLeaveVoice = shouldLeaveVC(error);
-
-            if (channel && typeof channel.send === 'function') {
-                channel.send(userMessage.slice(0, 1900)).catch(e => structuredLog('error', '[DisTube Global Error Handler] Failed to send error message to channel', { guildId: channel?.guild?.id, errorMessage: e.message, errorStack: e.stack }));
-            } else {
-                structuredLog('error', '[DisTube Global Error] Could not send message to provided channel. Error message attempted:', { userMessageAttempted: userMessage, guildId: error.guildId || channel?.guild?.id });
-                const guildId = error.guildId || channel?.guild?.id;
-                if (guildId) {
-                    const lastKnownChannel = guildLastTextChannel.get(guildId);
-                    if (lastKnownChannel) {
-                        lastKnownChannel.send(`音楽機能でエラーが発生しました。詳細: ${(error.message || String(error)).slice(0, 1500)}`).catch(e => structuredLog('error', '[DisTube Global Error Handler] Failed to send to fallback channel', { guildId, channelId: lastKnownChannel.id, errorMessage: e.message, errorStack: e.stack }));
-                    }
-                }
-            }
-
-            const guildIdForAction = error.guildId || channel?.guild?.id;
-            if (guildIdForAction) {
-                const queue = client.distube.getQueue(guildIdForAction);
-                if (queue) {
-                    if (shouldStopQueue) {
-                        structuredLog('warn', '[DisTube Global Error Handler] Stopping queue for guild', { guildId: guildIdForAction, errorCode: error.errorCode });
-                        queue.stop().catch(e => structuredLog('error', '[DisTube Global Error Handler] Failed to stop queue', { guildId: guildIdForAction, errorMessage: e.message, errorStack: e.stack }));
-                    }
-                    if (shouldLeaveVoice && queue.voice) {
-                        structuredLog('warn', '[DisTube Global Error Handler] Leaving voice channel for guild', { guildId: guildIdForAction, errorCode: error.errorCode });
-                        queue.voice.leave().catch(e => structuredLog('error', '[DisTube Global Error Handler] Failed to leave VC', { guildId: guildIdForAction, errorMessage: e.message, errorStack: e.stack }));
-                    }
-                } else if (shouldLeaveVoice) {
-                    const voiceConnection = client.distube.voices.get(guildIdForAction);
-                    if (voiceConnection) {
-                        structuredLog('warn', '[DisTube Global Error Handler] Leaving voice channel for guild', { guildId: guildIdForAction, errorCode: error.errorCode });
-                        voiceConnection.leave().catch(e => structuredLog('error', '[DisTube Global Error Handler] Failed to leave VC', { guildId: guildIdForAction, errorMessage: e.message, errorStack: e.stack }));
-                    }
-                }
-            }
+            handleDisTubeError(client, channel, error);
         })
         .on('searchNoResult', (message, query) => {
             const source = message.channel || message;
