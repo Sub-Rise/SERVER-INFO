@@ -31,23 +31,23 @@ function startLeaveTimer(client, queueOrGuildId, textChannelFromEvent = null) {
 
     let finalOperableTextChannel = operableTextChannel;
     if (currentQueue && currentQueue.textChannel) {
-        finalOperableTextChannel = currentQueue.textChannel;
+      finalOperableTextChannel = currentQueue.textChannel;
     } else if (!finalOperableTextChannel) {
-        finalOperableTextChannel = guildLastTextChannel.get(guildId);
+      finalOperableTextChannel = guildLastTextChannel.get(guildId);
     }
 
     if (voiceConnection) {
       structuredLog('info', '[LeaveTimer] Timer expired for guild', { guildId });
       if (finalOperableTextChannel) {
-          try {
-            await finalOperableTextChannel.send('5分間操作がなかったため、ボイスチャンネルから退出します。');
-          } catch (sendError) {
-            structuredLog('error', '[LeaveTimer] Failed to send leave message to channel for guild', { guildId, channelId: finalOperableTextChannel.id, errorMessage: sendError.message, errorStack: sendError.stack });
-          }
+        try {
+          await finalOperableTextChannel.send('5分間操作がなかったため、ボイスチャンネルから退出します。');
+        } catch (sendError) {
+          structuredLog('error', '[LeaveTimer] Failed to send leave message to channel for guild', { guildId, channelId: finalOperableTextChannel.id, errorMessage: sendError.message, errorStack: sendError.stack });
+        }
       } else {
-          structuredLog('warn', '[LeaveTimer] No text channel found to send leave message for guild', { guildId });
+        structuredLog('warn', '[LeaveTimer] No text channel found to send leave message for guild', { guildId });
       }
-      
+
       try {
         await voiceConnection.leave();
         structuredLog('info', '[LeaveTimer] Left voice channel in guild', { guildId });
@@ -70,10 +70,45 @@ function clearLeaveTimer(guildId) {
   }
 }
 
+/**
+ * ギルド関連の全Mapエントリをクリーンアップ
+ * ボットがギルドから退出した際やギルドが削除された際に呼び出す
+ * @param {string} guildId - クリーンアップ対象のギルドID
+ */
+function cleanupGuild(guildId) {
+  if (!guildId) return;
+
+  let cleanedCount = 0;
+
+  if (guildLeaveTimers.has(guildId)) {
+    clearTimeout(guildLeaveTimers.get(guildId));
+    guildLeaveTimers.delete(guildId);
+    cleanedCount++;
+  }
+
+  if (guildLastTextChannel.has(guildId)) {
+    guildLastTextChannel.delete(guildId);
+    cleanedCount++;
+  }
+
+  if (guildAutoShuffle.has(guildId)) {
+    guildAutoShuffle.delete(guildId);
+    cleanedCount++;
+  }
+
+  if (cleanedCount > 0) {
+    structuredLog('info', '[TimerCleanup] Cleaned up guild entries', {
+      guildId,
+      cleanedMaps: cleanedCount
+    });
+  }
+}
+
 module.exports = {
   guildLeaveTimers,
   guildLastTextChannel,
   guildAutoShuffle,
   startLeaveTimer,
   clearLeaveTimer,
+  cleanupGuild,
 }; 

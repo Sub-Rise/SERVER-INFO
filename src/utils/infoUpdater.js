@@ -107,7 +107,7 @@ async function stopManagingWithCleanup(guildId, reason) {
 async function startManaging(interaction) {
     const { guild, client } = interaction;
 
-    await interaction.deferReply({ ephemeral: true }); // 64 = ephemeral flag
+    await interaction.deferReply({ ephemeral: true });
 
     try {
         const initialEmbed = await createServerInfoEmbed(guild, client);
