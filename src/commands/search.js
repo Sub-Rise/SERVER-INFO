@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const structuredLog = require('../utils/logger');
+const { safeDeferReply } = require('../utils/commandWrapper');
 const { TIMEOUTS, MUSIC, COLORS } = require('../config/constants');
 
 module.exports = {
@@ -12,7 +13,11 @@ module.exports = {
                 .setRequired(true)),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const query = interaction.options.getString('query');
 
         if (!query) {

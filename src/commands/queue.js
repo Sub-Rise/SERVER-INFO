@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { COLORS } = require('../config/constants');
+const { safeDeferReply } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -6,7 +8,11 @@ module.exports = {
         .setDescription('現在の音楽キューを表示します。'),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const queue = client.distube.getQueue(interaction.guildId);
         if (!queue || !queue.songs || queue.songs.length === 0) {
             return interaction.followUp({ content: '現在再生中のキューはありません。', ephemeral: true });
@@ -17,7 +23,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setTitle('再生キュー')
             .setDescription(q.slice(0, 4090) || 'キューは空です。')
-            .setColor('#0099ff');
+            .setColor(COLORS.INFO);
         await interaction.followUp({ embeds: [embed] });
     },
 }; 

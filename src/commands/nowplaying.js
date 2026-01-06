@@ -1,4 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { COLORS } = require('../config/constants');
+const { safeDeferReply } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -6,7 +8,11 @@ module.exports = {
         .setDescription('現在再生中の曲の情報を表示します。'),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || !queue.songs || queue.songs.length === 0) {
@@ -15,7 +21,7 @@ module.exports = {
 
         const song = queue.songs[0];
         const embed = new EmbedBuilder()
-            .setColor('#0099ff')
+            .setColor(COLORS.INFO)
             .setTitle(song.name)
             .setURL(song.url)
             .setAuthor({ name: song.uploader?.name || '不明なアップロード者', url: song.uploader?.url })

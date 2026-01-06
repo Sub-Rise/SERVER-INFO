@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
+const { safeDeferReply } = require('../utils/commandWrapper');
 const axios = require('axios');
 const { lyricsApiUrl } = require('../config/environment');
 const { COLORS } = require('../config/constants');
@@ -10,7 +11,11 @@ module.exports = {
         .setDescription('現在再生中の曲の歌詞を表示します。'),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || !queue.songs || queue.songs.length === 0) {

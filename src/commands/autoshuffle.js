@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { guildAutoShuffle } = require('../utils/timers');
+const { safeDeferReply } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,7 +15,10 @@ module.exports = {
                     { name: 'オフ', value: 'off' },
                 )),
     async execute(interaction) {
-        await interaction.deferReply();
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const mode = interaction.options.getString('mode');
         const guildId = interaction.guildId;
 

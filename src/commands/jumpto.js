@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
+const { safeDeferReply } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,7 +13,11 @@ module.exports = {
                 .setMinValue(1)),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const queue = client.distube.getQueue(interaction.guildId);
         const jumpToNumber = interaction.options.getInteger('number');
 

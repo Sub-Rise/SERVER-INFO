@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, version } = require('discord.js');
 const { isAdmin } = require('../utils/permissions');
 const structuredLog = require('../utils/logger');
+const { safeDeferReply } = require('../utils/commandWrapper');
 const { ownerId } = require('../config/environment');
 
 module.exports = {
@@ -11,7 +12,11 @@ module.exports = {
         if (!isAdmin(interaction)) {
             return interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
         }
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const { client } = interaction;
 
         const uptimeMs = client.uptime;

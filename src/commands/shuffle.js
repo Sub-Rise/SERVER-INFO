@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
+const { safeDeferReply } = require('../utils/commandWrapper');
 const { COLORS, MUSIC } = require('../config/constants');
 
 module.exports = {
@@ -8,7 +9,11 @@ module.exports = {
         .setDescription('現在の音楽キューをシャッフルします。'),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || queue.songs.length < 2) {

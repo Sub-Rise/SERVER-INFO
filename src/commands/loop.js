@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
+const { safeDeferReply } = require('../utils/commandWrapper');
+const { COLORS } = require('../config/constants');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -16,7 +18,11 @@ module.exports = {
                 )),
     async execute(interaction) {
         const { client } = interaction;
-        await interaction.deferReply();
+
+        // safeDeferReply でエラーハンドリング付き defer
+        const deferSuccess = await safeDeferReply(interaction, {});
+        if (!deferSuccess) return;
+
         const queue = client.distube.getQueue(interaction.guildId);
         if (!queue) {
             return interaction.followUp({ content: 'ループモードを設定するキューがありません。', ephemeral: true });
@@ -34,7 +40,7 @@ module.exports = {
         try {
             queue.setRepeatMode(repeatMode);
             const embed = new EmbedBuilder()
-                .setColor('#0099ff')
+                .setColor(COLORS.INFO)
                 .setDescription(`🔁 ループモードを **${modeText}** に設定しました。`);
             await interaction.followUp({ embeds: [embed] });
         } catch (e) {
