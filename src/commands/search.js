@@ -16,12 +16,12 @@ module.exports = {
         const query = interaction.options.getString('query');
 
         if (!query) {
-            return interaction.followUp({ content: '検索クエリを入力してください。', flags: 64 });
+            return interaction.followUp({ content: '検索クエリを入力してください。', ephemeral: true });
         }
         const youtubePlugin = client.distube.plugins.get('YouTube');
         if (!youtubePlugin) {
             structuredLog('error', '[SearchCommand] YouTubePlugin instance is not available.', { guildId: interaction.guild.id });
-            return interaction.followUp({ content: '検索機能の準備ができていません。', flags: 64 });
+            return interaction.followUp({ content: '検索機能の準備ができていません。', ephemeral: true });
         }
 
         try {
@@ -31,7 +31,7 @@ module.exports = {
             });
 
             if (!results || results.length === 0) {
-                return interaction.followUp({ content: `\`${query}\` の検索結果が見つかりませんでした。`, flags: 64 });
+                return interaction.followUp({ content: `\`${query}\` の検索結果が見つかりませんでした。`, ephemeral: true });
             }
 
             const itemsPerPage = 10;
@@ -98,7 +98,7 @@ module.exports = {
                         const voiceChannel = interaction.member.voice.channel;
 
                         if (!voiceChannel) {
-                            await i.followUp({ content: '曲を再生するには、まずボイスチャンネルに参加してください。', flags: 64 });
+                            await i.followUp({ content: '曲を再生するには、まずボイスチャンネルに参加してください。', ephemeral: true });
                             collector.stop('no_voice_channel');
                             return;
                         }
@@ -126,9 +126,9 @@ module.exports = {
                 } catch (collectorError) {
                     structuredLog('error', '[SearchCollector] Error in collect event.', { guildId: interaction.guild.id, customId: i.customId, errorMessage: collectorError.message });
                     if (!i.replied && !i.deferred) {
-                        await i.reply({ content: '処理中にエラーが発生しました。', flags: 64 }).catch(() => { });
+                        await i.reply({ content: '処理中にエラーが発生しました。', ephemeral: true }).catch(() => { });
                     } else {
-                        await i.followUp({ content: '処理中にエラーが発生しました。', flags: 64 }).catch(() => { });
+                        await i.followUp({ content: '処理中にエラーが発生しました。', ephemeral: true }).catch(() => { });
                     }
                 }
             });
@@ -141,7 +141,7 @@ module.exports = {
 
         } catch (e) {
             structuredLog('error', '[SearchCommand] Error during search.', { query, guildId: interaction.guild.id, errorMessage: e.message });
-            await interaction.followUp({ content: '検索中に予期せぬエラーが発生しました。', flags: 64 });
+            await interaction.followUp({ content: '検索中に予期せぬエラーが発生しました。', ephemeral: true });
         }
     },
 }; 

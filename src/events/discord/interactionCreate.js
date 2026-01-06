@@ -20,7 +20,7 @@ module.exports = {
         }
 
         if (!interaction.inCachedGuild()) {
-            await interaction.reply({ content: 'サーバー情報の取得準備中のため、このコマンドは実行できません。少し待ってから再度お試しください。', flags: 64 }).catch(err => {
+            await interaction.reply({ content: 'サーバー情報の取得準備中のため、このコマンドは実行できません。少し待ってから再度お試しください。', ephemeral: true }).catch(err => {
                 structuredLog('warn', 'Failed to reply for uncached guild interaction', {
                     commandName: interaction.commandName,
                     userId: interaction.user.id,
@@ -40,7 +40,7 @@ module.exports = {
 
         if (!command) {
             structuredLog('error', 'Command not found', { commandName: interaction.commandName, userId: interaction.user.id, guildId: interaction.guild?.id });
-            await interaction.reply({ content: '存在しないコマンドです。', flags: 64 }).catch(err => {
+            await interaction.reply({ content: '存在しないコマンドです。', ephemeral: true }).catch(err => {
                 structuredLog('warn', 'Failed to reply for unknown command', {
                     commandName: interaction.commandName,
                     userId: interaction.user.id,
@@ -58,9 +58,9 @@ module.exports = {
             structuredLog('error', 'Error executing command', { commandName: interaction.commandName, userId: interaction.user.id, guildId: interaction.guild?.id, errorMessage: error.message, errorStack: error.stack });
             try {
                 if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({ content: 'コマンド実行中にエラーが発生しました。', flags: 64 });
+                    await interaction.followUp({ content: 'コマンド実行中にエラーが発生しました。', ephemeral: true });
                 } else {
-                    await interaction.reply({ content: 'コマンド実行中にエラーが発生しました。', flags: 64 });
+                    await interaction.reply({ content: 'コマンド実行中にエラーが発生しました。', ephemeral: true });
                 }
             } catch (replyError) {
                 structuredLog('warn', 'Failed to send error reply', {

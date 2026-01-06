@@ -15,7 +15,7 @@ module.exports = {
         const { client } = interaction; // client を interaction から取得
 
         try {
-            await interaction.deferReply({ flags: 64 });
+            await interaction.deferReply({ ephemeral: true });
         } catch (deferError) {
             structuredLog('error', '[PlayCommand] deferReply failed.', {
                 command: 'play',
@@ -47,18 +47,18 @@ module.exports = {
         const voiceChannel = interaction.member.voice.channel;
 
         if (!voiceChannel) {
-            return interaction.followUp({ content: '先にボイスチャンネルに参加してください！', flags: 64 });
+            return interaction.followUp({ content: '先にボイスチャンネルに参加してください！', ephemeral: true });
         }
 
         const permissions = voiceChannel.permissionsFor(interaction.client.user);
         if (!permissions.has(PermissionsBitField.Flags.Connect) || !permissions.has(PermissionsBitField.Flags.Speak)) {
-            return interaction.followUp({ content: 'ボイスチャンネルに接続または発言する権限がありません。権限を確認してください。', flags: 64 });
+            return interaction.followUp({ content: 'ボイスチャンネルに接続または発言する権限がありません。権限を確認してください。', ephemeral: true });
         }
 
         if (!songArg) {
             const queue = client.distube.getQueue(interaction.guildId);
             if (queue && queue.voice && queue.voice.channelId === voiceChannel.id) {
-                return interaction.followUp({ content: '既にボイスチャンネルに接続済みです。再生する曲を指定してください。', flags: 64 });
+                return interaction.followUp({ content: '既にボイスチャンネルに接続済みです。再生する曲を指定してください。', ephemeral: true });
             }
             try {
                 await client.distube.voices.join(voiceChannel);
@@ -71,7 +71,7 @@ module.exports = {
                 }
             } catch (e) {
                 structuredLog('error', '[JoinOnPlayCommand] Error joining voice channel.', { userId: interaction.user.id, guildId: interaction.guild.id, errorMessage: e.message, errorStack: e.stack });
-                return interaction.followUp({ content: 'ボイスチャンネルへの参加に失敗しました。', flags: 64 });
+                return interaction.followUp({ content: 'ボイスチャンネルへの参加に失敗しました。', ephemeral: true });
             }
         }
 
@@ -93,9 +93,9 @@ module.exports = {
             const userFriendlyMessage = getErrorMessage(e, songArg);
             try {
                 if (!interaction.replied && !interaction.deferred) {
-                    await interaction.reply({ content: userFriendlyMessage, flags: 64 });
+                    await interaction.reply({ content: userFriendlyMessage, ephemeral: true });
                 } else {
-                    await interaction.followUp({ content: userFriendlyMessage, flags: 64 });
+                    await interaction.followUp({ content: userFriendlyMessage, ephemeral: true });
                 }
             } catch (followUpError) {
                 structuredLog('error', '[PlayCommand] Failed to send error followUp.', { userId: interaction.user.id, guildId: interaction.guild.id, errorMessage: followUpError.message });

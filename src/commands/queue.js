@@ -9,7 +9,7 @@ module.exports = {
         await interaction.deferReply();
         const queue = client.distube.getQueue(interaction.guildId);
         if (!queue || !queue.songs || queue.songs.length === 0) {
-            return interaction.followUp({ content: '現在再生中のキューはありません。', flags: 64 });
+            return interaction.followUp({ content: '現在再生中のキューはありません。', ephemeral: true });
         }
         const q = queue.songs
             .map((song, i) => `${i === 0 ? '再生中:' : ` \`${i}.\``} ${song.name} - \`${song.formattedDuration}\``)

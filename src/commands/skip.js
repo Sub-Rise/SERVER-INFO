@@ -9,7 +9,7 @@ module.exports = {
         const { client } = interaction;
         await interaction.deferReply();
         const queue = client.distube.getQueue(interaction.guildId);
-        if (!queue) return interaction.followUp({ content: 'スキップする曲がありません。', flags: 64 });
+        if (!queue) return interaction.followUp({ content: 'スキップする曲がありません。', ephemeral: true });
         try {
             if (queue.songs.length <= 1 && !queue.autoplay && queue.repeatMode === 0) {
                 await queue.stop();
@@ -20,7 +20,7 @@ module.exports = {
             }
         } catch (e) {
             structuredLog('error', '[SkipCommand] Error skipping song.', { guildId: interaction.guild.id, errorMessage: e.message });
-            await interaction.followUp({ content: `スキップできませんでした: ${e.message.slice(0, 1900)}`, flags: 64 });
+            await interaction.followUp({ content: `スキップできませんでした: ${e.message.slice(0, 1900)}`, ephemeral: true });
         }
     },
 }; 

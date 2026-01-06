@@ -16,11 +16,11 @@ module.exports = {
         await interaction.deferReply();
         const queue = client.distube.getQueue(interaction.guildId);
         if (!queue) {
-            return interaction.followUp({ content: '音量を変更するキューがありません。', flags: 64 });
+            return interaction.followUp({ content: '音量を変更するキューがありません。', ephemeral: true });
         }
         const level = interaction.options.getInteger('level');
         if (level === null) { // Redundant check due to required=true, but good practice
-            return interaction.followUp({ content: '音量を指定してください。', flags: 64 });
+            return interaction.followUp({ content: '音量を指定してください。', ephemeral: true });
         }
 
         try {
@@ -31,7 +31,7 @@ module.exports = {
             await interaction.followUp({ embeds: [embed] });
         } catch (e) {
             structuredLog('error', '[VolumeCommand] Error setting volume.', { level, guildId: interaction.guild.id, errorMessage: e.message });
-            await interaction.followUp({ content: '音量の設定に失敗しました。', flags: 64 });
+            await interaction.followUp({ content: '音量の設定に失敗しました。', ephemeral: true });
         }
     },
 }; 

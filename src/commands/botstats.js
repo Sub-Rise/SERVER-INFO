@@ -9,7 +9,7 @@ module.exports = {
         .setDescription('ボットに関する統計情報を表示します。'),
     async execute(interaction) {
         if (!isAdmin(interaction)) {
-            return interaction.reply({ content: 'このコマンドを実行する権限がありません。', flags: 64 });
+            return interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
         }
         await interaction.deferReply();
         const { client } = interaction;

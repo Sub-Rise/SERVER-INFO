@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
 const axios = require('axios');
+const { lyricsApiUrl } = require('../config/environment');
+const { COLORS } = require('../config/constants');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -12,7 +14,7 @@ module.exports = {
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || !queue.songs || queue.songs.length === 0) {
-            return interaction.followUp({ content: '現在再生中の曲がありません。', flags: 64 });
+            return interaction.followUp({ content: '現在再生中の曲がありません。', ephemeral: true });
         }
 
         const song = queue.songs[0];
@@ -80,10 +82,10 @@ module.exports = {
         cleanedTitle = cleanedTitle.replace(/\.$/, '').trim();
 
         if (cleanedArtist === 'Unknown Artist' || !cleanedTitle) {
-            return interaction.followUp({ content: 'アーティスト名または曲名を特定できませんでした。', flags: 64 });
+            return interaction.followUp({ content: 'アーティスト名または曲名を特定できませんでした。', ephemeral: true });
         }
 
-        const apiUrl = 'https://lyrics.lewdhutao.my.eu.org/youtube/lyrics';
+        const apiUrl = lyricsApiUrl;
         const params = { title: cleanedTitle };
         structuredLog('info', '[LyricsCommand] Fetching lyrics', { title: cleanedTitle });
 
@@ -92,7 +94,7 @@ module.exports = {
             let lyrics = response.data.lyrics;
 
             if (!lyrics || (Array.isArray(lyrics) && lyrics.length === 0) || (typeof lyrics === 'string' && lyrics.trim() === '')) {
-                return interaction.followUp({ content: `「${cleanedArtist} - ${cleanedTitle}」の歌詞は見つかりませんでした。`, flags: 64 });
+                return interaction.followUp({ content: `「${cleanedArtist} - ${cleanedTitle}」の歌詞は見つかりませんでした。`, ephemeral: true });
             }
             if (Array.isArray(lyrics)) {
                 lyrics = lyrics.join('\n');
@@ -104,7 +106,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle(`${displayArtist} - ${displayTitle}`)
-                .setColor(0x00AE86);
+                .setColor(COLORS.SUCCESS);
             if (response.data.artwork_url) {
                 embed.setThumbnail(response.data.artwork_url);
             }
@@ -116,7 +118,7 @@ module.exports = {
             await interaction.followUp({ embeds: [embed] });
         } catch (error) {
             structuredLog('error', '[LyricsCommand] API Error', { title: cleanedTitle, error: error.message });
-            await interaction.followUp({ content: '歌詞の取得中にエラーが発生しました。', flags: 64 });
+            await interaction.followUp({ content: '歌詞の取得中にエラーが発生しました。', ephemeral: true });
         }
     },
 }; 

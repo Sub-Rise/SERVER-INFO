@@ -19,7 +19,7 @@ module.exports = {
         const guildId = interaction.guildId;
 
         if (!guildId) {
-            return interaction.followUp({ content: 'このコマンドはサーバー内でのみ実行できます。', flags: 64 });
+            return interaction.followUp({ content: 'このコマンドはサーバー内でのみ実行できます。', ephemeral: true });
         }
 
         if (mode === 'on') {

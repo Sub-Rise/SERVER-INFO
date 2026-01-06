@@ -19,7 +19,7 @@ module.exports = {
         await interaction.deferReply();
         const queue = client.distube.getQueue(interaction.guildId);
         if (!queue) {
-            return interaction.followUp({ content: 'ループモードを設定するキューがありません。', flags: 64 });
+            return interaction.followUp({ content: 'ループモードを設定するキューがありません。', ephemeral: true });
         }
         const modeArg = interaction.options.getString('mode');
         let repeatMode;
@@ -29,7 +29,7 @@ module.exports = {
             case 'track': repeatMode = 1; modeText = '現在の曲をリピート'; break;
             case 'queue': repeatMode = 2; modeText = 'キュー全体をリピート'; break;
             default: // Should not be reachable due to choices
-                return interaction.followUp({ content: '無効なループモードです。', flags: 64 });
+                return interaction.followUp({ content: '無効なループモードです。', ephemeral: true });
         }
         try {
             queue.setRepeatMode(repeatMode);
@@ -39,7 +39,7 @@ module.exports = {
             await interaction.followUp({ embeds: [embed] });
         } catch (e) {
             structuredLog('error', '[LoopCommand] Error setting loop mode.', { modeArg, guildId: interaction.guild.id, errorMessage: e.message });
-            await interaction.followUp({ content: 'ループモードの設定に失敗しました。', flags: 64 });
+            await interaction.followUp({ content: 'ループモードの設定に失敗しました。', ephemeral: true });
         }
     },
 }; 

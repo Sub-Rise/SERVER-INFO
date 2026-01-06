@@ -8,7 +8,7 @@ module.exports = {
         .setDescription('サーバー情報を表示、またはリアルタイム更新の開始/停止をします。'),
     async execute(interaction) {
         if (!isAdmin(interaction)) {
-            return interaction.reply({ content: 'このコマンドを実行する権限がありません。', flags: 64 });
+            return interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
         }
         await toggleUpdate(interaction);
     },

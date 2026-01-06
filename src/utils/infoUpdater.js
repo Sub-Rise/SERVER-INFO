@@ -107,7 +107,7 @@ async function stopManagingWithCleanup(guildId, reason) {
 async function startManaging(interaction) {
     const { guild, client } = interaction;
 
-    await interaction.deferReply({ flags: 64 }); // 64 = ephemeral flag
+    await interaction.deferReply({ ephemeral: true }); // 64 = ephemeral flag
 
     try {
         const initialEmbed = await createServerInfoEmbed(guild, client);
@@ -143,7 +143,7 @@ async function toggleUpdate(interaction) {
     const { guild, client } = interaction;
 
     if (managedMessages.has(guild.id)) {
-        await interaction.deferReply({ flags: 64 });
+        await interaction.deferReply({ ephemeral: true });
         await stopManagingWithCleanup(guild.id, 'user_request');
         structuredLog('info', '[InfoUpdater] User stopped server info panel', {
             guildId: guild.id,

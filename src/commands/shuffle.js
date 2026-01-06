@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
+const { COLORS, MUSIC } = require('../config/constants');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,11 +12,11 @@ module.exports = {
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || queue.songs.length < 2) {
-            return interaction.followUp({ content: 'シャッフルするにはキューに2曲以上必要です。', flags: 64 });
+            return interaction.followUp({ content: 'シャッフルするにはキューに2曲以上必要です。', ephemeral: true });
         }
 
         const veryInitialOrderUrls = queue.songs.slice(1).map(song => song.url);
-        const shuffleAttempts = queue.songs.length <= 2 ? 1 : 3;
+        const shuffleAttempts = queue.songs.length <= 2 ? 1 : MUSIC.SHUFFLE_ATTEMPTS;
 
         for (let i = 0; i < shuffleAttempts; i++) {
             await queue.shuffle();
@@ -30,7 +31,7 @@ module.exports = {
         const isDifferentFromVeryInitial = !(veryInitialOrderUrls.length === finalOrderUrls.length &&
             veryInitialOrderUrls.every((url, index) => url === finalOrderUrls[index]));
 
-        const embed = new EmbedBuilder().setColor('#0099ff');
+        const embed = new EmbedBuilder().setColor(COLORS.INFO);
         if (isDifferentFromVeryInitial) {
             embed.setDescription('🔀 キューをシャッフルしました！');
         } else {

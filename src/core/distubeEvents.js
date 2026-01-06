@@ -7,6 +7,7 @@ const { EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger.js');
 const { clearLeaveTimer, startLeaveTimer, guildLastTextChannel, guildAutoShuffle } = require('../utils/timers.js');
 const { getErrorMessage, isCriticalError, shouldLeaveVC } = require('../utils/distubeErrors.js');
+const { COLORS } = require('../config/constants.js');
 
 /**
  * 自動シャッフル処理を実行
@@ -21,7 +22,7 @@ async function performAutoShuffle(queue, context) {
     try {
         await queue.shuffle();
         const embed = new EmbedBuilder()
-            .setColor(0x00AE86)
+            .setColor(COLORS.SUCCESS)
             .setTitle('🔄 自動シャッフルによりキューをシャッフルしました。');
 
         if (queue.songs.length > 1) {
@@ -133,7 +134,7 @@ function setupDisTubeEvents(distube, client) {
                     structuredLog('error', '[DisTube Event Handler] Error sending searchNoResult message to TextChannel', { query, sourceChannelId: source?.id, guildId: source?.guild?.id, errorMessage: err.message, errorStack: err.stack });
                 });
             } else if (message.followUp && typeof message.followUp === 'function') {
-                message.followUp({ content: `\`${query}\` の検索結果が見つかりませんでした。`, flags: 64 }).catch(err => {
+                message.followUp({ content: `\`${query}\` の検索結果が見つかりませんでした。`, ephemeral: true }).catch(err => {
                     structuredLog('error', '[DisTube Event Handler] Error sending searchNoResult followUp to Interaction', { query, interactionId: message.id, guildId: message.guildId, errorMessage: err.message, errorStack: err.stack });
                 });
             } else {

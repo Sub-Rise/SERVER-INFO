@@ -10,7 +10,7 @@ module.exports = {
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || !queue.songs || queue.songs.length === 0) {
-            return interaction.followUp({ content: '現在再生中の曲はありません。', flags: 64 });
+            return interaction.followUp({ content: '現在再生中の曲はありません。', ephemeral: true });
         }
 
         const song = queue.songs[0];
