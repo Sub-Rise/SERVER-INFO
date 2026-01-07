@@ -43,16 +43,19 @@ async function safeDeferReply(interaction, options = {}) {
  * @param {Function} commandFn - コマンドのメイン処理関数 (interaction) => Promise<void>
  * @param {Object} options - オプション
  * @param {boolean} options.ephemeral - deferReply を ephemeral にするか（デフォルト: false）
- * @param {boolean} options.shouldDefer - 自動的に deferReply を実行するか（デフォルト: true）
+ * @param {boolean} options.autoDefer - 自動的に deferReply を実行するか（デフォルト: true）
+ * @param {boolean} options.shouldDefer - autoDefer のエイリアス（後方互換性のため維持）
  * @returns {Function} - ラップされた execute 関数
  */
 function wrapCommand(commandFn, options = {}) {
-    const { ephemeral = false, shouldDefer = true } = options;
+    const { ephemeral = false, autoDefer, shouldDefer = true } = options;
+    // autoDefer が明示的に指定されている場合はそちらを優先
+    const shouldAutoDeferReply = autoDefer !== undefined ? autoDefer : shouldDefer;
 
     return async function wrappedExecute(interaction) {
         try {
             // 共通の defer 処理
-            if (shouldDefer && !interaction.deferred && !interaction.replied) {
+            if (shouldAutoDeferReply && !interaction.deferred && !interaction.replied) {
                 const deferSuccess = await safeDeferReply(interaction, { ephemeral });
                 if (!deferSuccess) {
                     return; // defer に失敗した場合は処理を中断

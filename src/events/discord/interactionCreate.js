@@ -55,7 +55,18 @@ module.exports = {
             // client インスタンスは interaction に含まれているので、別途渡す必要はない
             await command.execute(interaction);
         } catch (error) {
-            structuredLog('error', 'Error executing command', { commandName: interaction.commandName, userId: interaction.user.id, guildId: interaction.guild?.id, errorMessage: error.message, errorStack: error.stack });
+            // wrapCommand でラップされているコマンドは内部でエラーハンドリングを行うため、
+            // ここに到達するのは「ラップし忘れ」または予期せぬエラーの場合のみ。
+            // 「最後の砦」として安全網を維持する。
+            structuredLog('error', '[InteractionCreate] Uncaught error in command execution (possible unwrapped command)', {
+                commandName: interaction.commandName,
+                userId: interaction.user.id,
+                guildId: interaction.guild?.id,
+                errorMessage: error.message,
+                errorStack: error.stack
+            });
+
+            // ユーザーへのフォールバック通知
             try {
                 if (interaction.replied || interaction.deferred) {
                     await interaction.followUp({ content: 'コマンド実行中にエラーが発生しました。', ephemeral: true });
@@ -63,7 +74,7 @@ module.exports = {
                     await interaction.reply({ content: 'コマンド実行中にエラーが発生しました。', ephemeral: true });
                 }
             } catch (replyError) {
-                structuredLog('warn', 'Failed to send error reply', {
+                structuredLog('warn', '[InteractionCreate] Failed to send fallback error notification', {
                     commandName: interaction.commandName,
                     userId: interaction.user.id,
                     guildId: interaction.guild?.id,
