@@ -1,18 +1,13 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { COLORS } = require('../config/constants');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nowplaying')
         .setDescription('現在再生中の曲の情報を表示します。'),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
         const { client } = interaction;
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || !queue.songs || queue.songs.length === 0) {
@@ -48,5 +43,5 @@ module.exports = {
         }
 
         await interaction.followUp({ embeds: [embed] });
-    },
-}; 
+    }),
+};

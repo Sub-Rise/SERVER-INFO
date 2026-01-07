@@ -1,19 +1,14 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 const { COLORS, MUSIC } = require('../config/constants');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('shuffle')
         .setDescription('現在の音楽キューをシャッフルします。'),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
         const { client } = interaction;
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || queue.songs.length < 2) {
@@ -40,9 +35,11 @@ module.exports = {
         if (isDifferentFromVeryInitial) {
             embed.setDescription('🔀 キューをシャッフルしました！');
         } else {
-            structuredLog('warn', '[ShuffleCommand] Queue order did not change after shuffle', { guildId: interaction.guild.id });
+            structuredLog('warn', '[ShuffleCommand] Queue order did not change after shuffle', {
+                guildId: interaction.guild?.id
+            });
             embed.setDescription('🔀 キューをシャッフルしようとしましたが、元の順序と同じになりました。');
         }
         await interaction.followUp({ embeds: [embed] });
-    },
-}; 
+    }),
+};

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, StringSelectMenuBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const structuredLog = require('../utils/logger');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 const { TIMEOUTS, MUSIC, COLORS } = require('../config/constants');
 
 module.exports = {
@@ -11,21 +11,17 @@ module.exports = {
             option.setName('query')
                 .setDescription('検索する曲名またはキーワード')
                 .setRequired(true)),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
         const { client } = interaction;
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
         const query = interaction.options.getString('query');
 
         if (!query) {
             return interaction.followUp({ content: '検索クエリを入力してください。', ephemeral: true });
         }
+
         const youtubePlugin = client.distube.plugins.get('YouTube');
         if (!youtubePlugin) {
-            structuredLog('error', '[SearchCommand] YouTubePlugin instance is not available.', { guildId: interaction.guild.id });
+            structuredLog('error', '[SearchCommand] YouTubePlugin instance is not available.', { guildId: interaction.guild?.id });
             return interaction.followUp({ content: '検索機能の準備ができていません。', ephemeral: true });
         }
 
@@ -115,7 +111,7 @@ module.exports = {
                             });
                             await message.edit({ content: `🎵 **${songToPlay?.name || '選択された曲'}** を再生キューに追加しました。`, embeds: [], components: [] });
                         } catch (e) {
-                            structuredLog('error', '[SearchCollector] Error playing selected song.', { selectedUrl, guildId: interaction.guild.id, errorCode: e.errorCode, errorMessage: e.message });
+                            structuredLog('error', '[SearchCollector] Error playing selected song.', { selectedUrl, guildId: interaction.guild?.id, errorCode: e.errorCode, errorMessage: e.message });
                             await message.edit({ content: '選択された曲の再生中にエラーが発生しました。', embeds: [], components: [] });
                         }
                         collector.stop('song_selected');
@@ -129,7 +125,7 @@ module.exports = {
                         await message.edit(generateSearchMessagePayload(currentPage));
                     }
                 } catch (collectorError) {
-                    structuredLog('error', '[SearchCollector] Error in collect event.', { guildId: interaction.guild.id, customId: i.customId, errorMessage: collectorError.message });
+                    structuredLog('error', '[SearchCollector] Error in collect event.', { guildId: interaction.guild?.id, customId: i.customId, errorMessage: collectorError.message });
                     if (!i.replied && !i.deferred) {
                         await i.reply({ content: '処理中にエラーが発生しました。', ephemeral: true }).catch(() => { });
                     } else {
@@ -145,8 +141,8 @@ module.exports = {
             });
 
         } catch (e) {
-            structuredLog('error', '[SearchCommand] Error during search.', { query, guildId: interaction.guild.id, errorMessage: e.message });
+            structuredLog('error', '[SearchCommand] Error during search.', { query, guildId: interaction.guild?.id, errorMessage: e.message });
             await interaction.followUp({ content: '検索中に予期せぬエラーが発生しました。', ephemeral: true });
         }
-    },
-}; 
+    }),
+};

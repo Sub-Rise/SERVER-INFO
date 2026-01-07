@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const { setAutoShuffle } = require('../utils/musicState');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,11 +14,7 @@ module.exports = {
                     { name: 'オン', value: 'on' },
                     { name: 'オフ', value: 'off' },
                 )),
-    async execute(interaction) {
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
+    execute: wrapCommand(async (interaction) => {
         const mode = interaction.options.getString('mode');
         const guildId = interaction.guildId;
 
@@ -33,5 +29,5 @@ module.exports = {
             setAutoShuffle(guildId, false);
             await interaction.followUp({ content: '❌ 自動シャッフルをオフにしました。' });
         }
-    },
-}; 
+    }),
+};

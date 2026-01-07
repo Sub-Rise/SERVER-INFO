@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,17 +11,17 @@ module.exports = {
                 .setDescription('ジャンプ先の曲番号（現在の曲の次が1番目）')
                 .setRequired(true)
                 .setMinValue(1)),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
         const { client } = interaction;
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
         const queue = client.distube.getQueue(interaction.guildId);
         const jumpToNumber = interaction.options.getInteger('number');
 
-        structuredLog('info', '[JumptoCommand] Received', { guildId: interaction.guild?.id, userId: interaction.user?.id, jumpToUserSpecifiedNumber: jumpToNumber, currentQueueLength: queue?.songs?.length ?? 0 });
+        structuredLog('info', '[JumptoCommand] Received', {
+            guildId: interaction.guild?.id,
+            userId: interaction.user?.id,
+            jumpToUserSpecifiedNumber: jumpToNumber,
+            currentQueueLength: queue?.songs?.length ?? 0
+        });
 
         if (!interaction.member.voice.channel) {
             return interaction.followUp({ content: '先にボイスチャンネルに参加してください！', ephemeral: true });
@@ -42,11 +42,15 @@ module.exports = {
         try {
             const targetSong = queue.songs[jumpToNumber];
             await queue.jump(jumpToNumber);
-            // playSong イベントで再生開始メッセージが出るため、ここでは成功メッセージのみ
             await interaction.followUp({ content: `⏭️ **${targetSong.name}** へジャンプしました。` });
         } catch (e) {
-            structuredLog('error', '[JumptoCommand] Error jumping to song.', { guildId: interaction.guild?.id, jumpTo: jumpToNumber, errorMessage: e.message, errorStack: e.stack });
+            structuredLog('error', '[JumptoCommand] Error jumping to song.', {
+                guildId: interaction.guild?.id,
+                jumpTo: jumpToNumber,
+                errorMessage: e.message,
+                errorStack: e.stack
+            });
             await interaction.followUp({ content: '曲のジャンプに失敗しました。', ephemeral: true });
         }
-    },
-}; 
+    }),
+};

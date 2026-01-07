@@ -1,6 +1,6 @@
 const { Events } = require('discord.js');
 const setupDisTube = require('../../core/distube.js');
-const { setupDisTubeEvents } = require('../../core/distubeEvents.js');
+const { setupDisTubeEvents } = require('../../core/distubeEvents/index.js');
 const structuredLog = require('../../utils/logger.js');
 const { initializeManagedPanels } = require('../../utils/infoUpdater.js');
 

@@ -1,21 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder, version } = require('discord.js');
 const { isAdmin } = require('../utils/permissions');
 const structuredLog = require('../utils/logger');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 const { ownerId } = require('../config/environment');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('botstats')
         .setDescription('ボットに関する統計情報を表示します。'),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
+        // 権限チェックは wrapCommand の前に実行されるべきだが、
+        // wrapCommand 内でも対応可能（followUp で ephemeral エラー）
         if (!isAdmin(interaction)) {
-            return interaction.reply({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
+            return interaction.followUp({ content: 'このコマンドを実行する権限がありません。', ephemeral: true });
         }
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
 
         const { client } = interaction;
 
@@ -69,5 +67,5 @@ module.exports = {
             )
             .setTimestamp();
         await interaction.followUp({ embeds: [embed] });
-    },
-}; 
+    }),
+};

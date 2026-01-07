@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 const axios = require('axios');
 const { lyricsApiUrl } = require('../config/environment');
 const { COLORS } = require('../config/constants');
@@ -9,13 +9,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('lyrics')
         .setDescription('現在再生中の曲の歌詞を表示します。'),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
         const { client } = interaction;
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
         const queue = client.distube.getQueue(interaction.guildId);
 
         if (!queue || !queue.songs || queue.songs.length === 0) {
@@ -77,7 +72,7 @@ module.exports = {
         const removePatterns = [
             /\(Official Video\)/ig, /\(Official Music Video\)/ig, /\(Music Video\)/ig, /\(Official Audio\)/ig, /\(Official Lyric Video\)/ig, /\(Lyric Video\)/ig, /\(Lyrics\)/ig, /\(MV\)/ig, /\(PV\)/ig,
             /\[MV\]/ig, /【MV】/ig, /s*(Official Music Video|Music Video|Official Video|Official Audio|Official Lyric Video|Lyric Video|Lyrics|MV|PV|フル|歌詞付き|高音質|作業用BGM)s*$/i,
-            /s*ft\.?.*$/i, /s*feat\.?.*$/i, /s*ver\.?.*$/i, /s*\(.*ver\.\)/i, /[()\[\]【】『』「」\\]/g,
+            /s*ft\.?.*$/i, /s*feat\.?.*$/i, /s*ver\.?.*$/i, /s*\(.*ver\.\)/i, /[()[\]【】『』「」\\]/g,
             /full version/ig, /short version/ig, /TV size/ig, /TV edit/ig, /TV ver\.?/ig, /game ver\.?/ig, /movie ver\.?/ig, /instrumental/ig, /karaoke/ig, /off vocal/ig, /stereo/ig, /hq/ig, /hd/ig, /4k/ig, /8k/ig, /高音質/g, /作業用bgm/g, /歌詞付き/g, /フル/g,
         ];
         for (const pattern of removePatterns) {
@@ -125,5 +120,5 @@ module.exports = {
             structuredLog('error', '[LyricsCommand] API Error', { title: cleanedTitle, error: error.message });
             await interaction.followUp({ content: '歌詞の取得中にエラーが発生しました。', ephemeral: true });
         }
-    },
-}; 
+    }),
+};

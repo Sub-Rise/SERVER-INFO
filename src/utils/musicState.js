@@ -59,11 +59,15 @@ function cleanupMusicState(guildId) {
 }
 
 module.exports = {
-    // 状態アクセス用（後方互換性のため直接エクスポートも維持）
-    guildAutoShuffle,
-
-    // 推奨API
+    // 推奨API（カプセル化されたアクセス）
     setAutoShuffle,
     isAutoShuffleEnabled,
-    cleanupMusicState
+    cleanupMusicState,
+
+    /**
+     * @deprecated 後方互換性のため維持。直接Mapにアクセスせず、上記のAPI関数を使用してください。
+     * 将来的に削除予定です。
+     */
+    guildAutoShuffle
 };
+

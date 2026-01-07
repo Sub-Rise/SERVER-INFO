@@ -1,20 +1,19 @@
 const { SlashCommandBuilder } = require('discord.js');
 const structuredLog = require('../utils/logger');
-const { safeDeferReply } = require('../utils/commandWrapper');
+const { wrapCommand } = require('../utils/commandWrapper');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('skip')
         .setDescription('現在の曲をスキップします。'),
-    async execute(interaction) {
+    execute: wrapCommand(async (interaction) => {
         const { client } = interaction;
-
-        // safeDeferReply でエラーハンドリング付き defer
-        const deferSuccess = await safeDeferReply(interaction, {});
-        if (!deferSuccess) return;
-
         const queue = client.distube.getQueue(interaction.guildId);
-        if (!queue) return interaction.followUp({ content: 'スキップする曲がありません。', ephemeral: true });
+
+        if (!queue) {
+            return interaction.followUp({ content: 'スキップする曲がありません。', ephemeral: true });
+        }
+
         try {
             if (queue.songs.length <= 1 && !queue.autoplay && queue.repeatMode === 0) {
                 await queue.stop();
@@ -24,8 +23,11 @@ module.exports = {
                 await interaction.followUp(`スキップしました。次の曲: **${song.name}**`);
             }
         } catch (e) {
-            structuredLog('error', '[SkipCommand] Error skipping song.', { guildId: interaction.guild.id, errorMessage: e.message });
+            structuredLog('error', '[SkipCommand] Error skipping song.', {
+                guildId: interaction.guild?.id,
+                errorMessage: e.message
+            });
             await interaction.followUp({ content: `スキップできませんでした: ${e.message.slice(0, 1900)}`, ephemeral: true });
         }
-    },
-}; 
+    }),
+};
