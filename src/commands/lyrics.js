@@ -4,6 +4,7 @@ const { wrapCommand } = require('../utils/commandWrapper');
 const axios = require('axios');
 const { lyricsApiUrl } = require('../config/environment');
 const { COLORS } = require('../config/constants');
+const { extractArtistAndTitle, normalizeLyrics } = require('../utils/stringUtils');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,68 +19,10 @@ module.exports = {
         }
 
         const song = queue.songs[0];
-        let rawArtist = song.uploader?.name || 'Unknown Artist';
-        let rawTitle = song.name;
+        const uploaderName = song.uploader?.name || null;
 
-        const commonSeparators = [' - ', ' – ', '／', '/'];
-        let artist = '';
-        let title = '';
-        let separatorUsed = false;
-
-        for (const sep of commonSeparators) {
-            if (rawTitle.includes(sep)) {
-                const parts = rawTitle.split(sep);
-                if (song.uploader?.name && song.uploader.name !== 'Unknown Artist') {
-                    artist = song.uploader.name;
-                    if (parts.length >= 2 && !['various artists', 'va', 'soundtrack'].includes(parts[0].toLowerCase().trim())) {
-                        title = parts.slice(1).join(sep).trim();
-                    } else {
-                        title = rawTitle;
-                    }
-                } else if (parts.length >= 2) {
-                    artist = parts[0].trim();
-                    title = parts.slice(1).join(sep).trim();
-                }
-                if (artist && title) {
-                    separatorUsed = true;
-                    break;
-                }
-            }
-        }
-
-        if (!separatorUsed || !artist) {
-            if (song.uploader?.name && song.uploader.name !== 'Unknown Artist') {
-                artist = song.uploader.name;
-                title = rawTitle;
-            } else {
-                title = rawTitle;
-                artist = 'Unknown Artist';
-            }
-        }
-
-        let cleanedArtist = artist.replace(/\s*\([^)]*\)$/, '').trim();
-        cleanedArtist = cleanedArtist.replace(/\.\(\d+\)/g, '').trim();
-        let cleanedTitle = title;
-        if (cleanedArtist && cleanedArtist !== 'Unknown Artist' && cleanedTitle.toLowerCase().startsWith(cleanedArtist.toLowerCase())) {
-            let tempTitle = cleanedTitle.substring(cleanedArtist.length).trim();
-            tempTitle = tempTitle.replace(/^[\s\-–／/『』「」().「」【】]*(?:official|lyric|music|video|audio|mv|pv|ver\.|ft\.|feat\.|feat|ver|short|edit|remix|live|acoustic|cover|original|stereo|hq|hd|4k|8k|フル|歌詞付き|高音質|作業用bgm|inst.)*/gi, '').trim();
-            tempTitle = tempTitle.replace(/^[\s\-–／/『』「」().「」【】]+/g, '').trim();
-            if (tempTitle) {
-                cleanedTitle = tempTitle;
-            }
-        }
-
-        const removePatterns = [
-            /\(Official Video\)/ig, /\(Official Music Video\)/ig, /\(Music Video\)/ig, /\(Official Audio\)/ig, /\(Official Lyric Video\)/ig, /\(Lyric Video\)/ig, /\(Lyrics\)/ig, /\(MV\)/ig, /\(PV\)/ig,
-            /\[MV\]/ig, /【MV】/ig, /s*(Official Music Video|Music Video|Official Video|Official Audio|Official Lyric Video|Lyric Video|Lyrics|MV|PV|フル|歌詞付き|高音質|作業用BGM)s*$/i,
-            /s*ft\.?.*$/i, /s*feat\.?.*$/i, /s*ver\.?.*$/i, /s*\(.*ver\.\)/i, /[()[\]【】『』「」\\]/g,
-            /full version/ig, /short version/ig, /TV size/ig, /TV edit/ig, /TV ver\.?/ig, /game ver\.?/ig, /movie ver\.?/ig, /instrumental/ig, /karaoke/ig, /off vocal/ig, /stereo/ig, /hq/ig, /hd/ig, /4k/ig, /8k/ig, /高音質/g, /作業用bgm/g, /歌詞付き/g, /フル/g,
-        ];
-        for (const pattern of removePatterns) {
-            cleanedTitle = cleanedTitle.replace(pattern, '').trim();
-        }
-        cleanedTitle = cleanedTitle.replace(/[\s\-–／/『』「」().「」【】]+/g, ' ').trim();
-        cleanedTitle = cleanedTitle.replace(/\.$/, '').trim();
+        // ビジネスロジックを共通ユーティリティに委譲
+        const { artist: cleanedArtist, title: cleanedTitle } = extractArtistAndTitle(song.name, uploaderName);
 
         if (cleanedArtist === 'Unknown Artist' || !cleanedTitle) {
             return interaction.followUp({ content: 'アーティスト名または曲名を特定できませんでした。', ephemeral: true });
@@ -87,7 +30,7 @@ module.exports = {
 
         const apiUrl = lyricsApiUrl;
         const params = { title: cleanedTitle };
-        structuredLog('info', '[LyricsCommand] Fetching lyrics', { title: cleanedTitle });
+        structuredLog('info', '[LyricsCommand] Fetching lyrics', { title: cleanedTitle, artist: cleanedArtist });
 
         try {
             const response = await axios.get(apiUrl, { params });
@@ -96,10 +39,9 @@ module.exports = {
             if (!lyrics || (Array.isArray(lyrics) && lyrics.length === 0) || (typeof lyrics === 'string' && lyrics.trim() === '')) {
                 return interaction.followUp({ content: `「${cleanedArtist} - ${cleanedTitle}」の歌詞は見つかりませんでした。`, ephemeral: true });
             }
-            if (Array.isArray(lyrics)) {
-                lyrics = lyrics.join('\n');
-            }
-            lyrics = lyrics.replace(/<br\/>/gi, '\n').trim();
+
+            // 歌詞の正規化を共通ユーティリティに委譲
+            lyrics = normalizeLyrics(lyrics);
 
             const displayArtist = response.data.artist_name || cleanedArtist;
             const displayTitle = response.data.track_name || cleanedTitle;

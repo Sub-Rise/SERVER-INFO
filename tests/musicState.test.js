@@ -1,22 +1,29 @@
 /**
  * musicState.js ユニットテスト
  * 自動シャッフル状態管理のテスト
+ * 
+ * 公開APIのみを使用してテスト（内部Mapへの直接アクセスは行わない）
  */
 
 // logger モジュールをモック化
 jest.mock('../src/utils/logger', () => jest.fn());
 
-const {
-    guildAutoShuffle,
-    setAutoShuffle,
-    isAutoShuffleEnabled,
-    cleanupMusicState
-} = require('../src/utils/musicState');
+// 各テストで新しいモジュールインスタンスを使用するためにキャッシュをクリア
+beforeEach(() => {
+    jest.resetModules();
+});
 
 describe('musicState', () => {
-    // 各テスト前に状態をリセット
+    let setAutoShuffle, isAutoShuffleEnabled, cleanupMusicState;
+
     beforeEach(() => {
-        guildAutoShuffle.clear();
+        // モジュールを再読み込みして状態をリセット
+        jest.isolateModules(() => {
+            const musicState = require('../src/utils/musicState');
+            setAutoShuffle = musicState.setAutoShuffle;
+            isAutoShuffleEnabled = musicState.isAutoShuffleEnabled;
+            cleanupMusicState = musicState.cleanupMusicState;
+        });
         jest.clearAllMocks();
     });
 
@@ -24,41 +31,36 @@ describe('musicState', () => {
         it('有効な guildId で状態を設定できる', () => {
             setAutoShuffle('guild-123', true);
 
-            expect(guildAutoShuffle.get('guild-123')).toBe(true);
+            expect(isAutoShuffleEnabled('guild-123')).toBe(true);
         });
 
         it('false を設定できる', () => {
             setAutoShuffle('guild-456', false);
 
-            expect(guildAutoShuffle.get('guild-456')).toBe(false);
+            expect(isAutoShuffleEnabled('guild-456')).toBe(false);
         });
 
         it('guildId が undefined の場合、設定しない', () => {
-            const initialSize = guildAutoShuffle.size;
-
             setAutoShuffle(undefined, true);
-
-            expect(guildAutoShuffle.size).toBe(initialSize);
+            // undefinedは設定されないため、isAutoShuffleEnabledはfalseを返す
+            expect(isAutoShuffleEnabled(undefined)).toBe(false);
         });
 
         it('guildId が null の場合、設定しない', () => {
-            const initialSize = guildAutoShuffle.size;
-
             setAutoShuffle(null, true);
-
-            expect(guildAutoShuffle.size).toBe(initialSize);
+            expect(isAutoShuffleEnabled(null)).toBe(false);
         });
     });
 
     describe('isAutoShuffleEnabled', () => {
         it('true が設定されている場合 true を返す', () => {
-            guildAutoShuffle.set('guild-789', true);
+            setAutoShuffle('guild-789', true);
 
             expect(isAutoShuffleEnabled('guild-789')).toBe(true);
         });
 
         it('false が設定されている場合 false を返す', () => {
-            guildAutoShuffle.set('guild-abc', false);
+            setAutoShuffle('guild-abc', false);
 
             expect(isAutoShuffleEnabled('guild-abc')).toBe(false);
         });
@@ -70,12 +72,12 @@ describe('musicState', () => {
 
     describe('cleanupMusicState', () => {
         it('存在するギルドの状態をクリーンアップし true を返す', () => {
-            guildAutoShuffle.set('guild-cleanup', true);
+            setAutoShuffle('guild-cleanup', true);
 
             const result = cleanupMusicState('guild-cleanup');
 
             expect(result).toBe(true);
-            expect(guildAutoShuffle.has('guild-cleanup')).toBe(false);
+            expect(isAutoShuffleEnabled('guild-cleanup')).toBe(false);
         });
 
         it('存在しないギルドの場合 false を返す', () => {

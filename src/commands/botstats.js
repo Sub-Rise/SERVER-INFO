@@ -3,6 +3,7 @@ const { isAdmin } = require('../utils/permissions');
 const structuredLog = require('../utils/logger');
 const { wrapCommand } = require('../utils/commandWrapper');
 const { ownerId } = require('../config/environment');
+const { COLORS } = require('../config/constants');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -50,7 +51,7 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-            .setColor('#0099ff')
+            .setColor(COLORS.INFO)
             .setTitle(`${client.user.username} の統計情報`)
             .setThumbnail(client.user.displayAvatarURL({ dynamic: true }))
             .addFields(

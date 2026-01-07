@@ -3,7 +3,7 @@ node_modules/
 
 # Environment & Config (contains secrets)
 .env
-# config.json - 非公開リポジトリのためGitHubに含める
+config.json
 
 # Logs (keep directory, ignore log files)
 logs/**/*.txt

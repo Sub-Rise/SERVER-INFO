@@ -32,7 +32,8 @@ const client = new Client({
 client.commands = new Collection();
 
 const infoUpdater = require('./utils/infoUpdater');
-const { hasManagedMessage, stopManagingForGuildDelete } = infoUpdater;
+const { stopManagingForGuildDelete } = infoUpdater;
+const { registerAll: registerInfoPanelEvents } = require('./events/discord/infoPanelEvents');
 
 // --- コマンドハンドラの動的読み込み ---
 const commandsPath = path.join(__dirname, 'commands');
@@ -67,36 +68,8 @@ for (const folder of eventFolders) {
     }
 }
 
-const eventsToUpdate = [
-    'channelCreate', 'channelDelete', 'channelUpdate',
-    'emojiCreate', 'emojiDelete', 'emojiUpdate',
-    'guildUpdate', 'guildMemberAdd', 'guildMemberRemove', 'guildMemberUpdate',
-    'presenceUpdate', 'roleCreate', 'roleDelete', 'roleUpdate',
-    'stickerCreate', 'stickerDelete', 'stickerUpdate', 'voiceStateUpdate'
-];
-
-eventsToUpdate.forEach(event => {
-    client.on(event, (arg1, arg2) => {
-        // guildUpdate gives (oldGuild, newGuild)
-        // other events like channelCreate give (channel)
-        // voiceStateUpdate gives (oldState, newState)
-        let guild = null;
-
-        if (event === 'guildUpdate') {
-            guild = arg2;
-        } else if (event === 'voiceStateUpdate') {
-            guild = arg2?.guild;
-        } else {
-            guild = arg1?.guild || arg1; // arg1 might be the guild itself (e.g. guildMemberAdd gives member, member.guild)
-            if (!guild?.id && arg1?.guild) guild = arg1.guild;
-        }
-
-        // Some events might not map cleanly this way, so we do a safety check
-        if (guild && guild.id && hasManagedMessage(guild.id)) {
-            infoUpdater.scheduleUpdate(guild.id);
-        }
-    });
-});
+// サーバー情報パネル更新イベントを一括登録
+registerInfoPanelEvents(client);
 
 client.on('guildDelete', (guild) => {
     if (stopManagingForGuildDelete(guild.id)) {

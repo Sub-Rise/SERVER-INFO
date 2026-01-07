@@ -1,6 +1,6 @@
 const structuredLog = require('./logger');
 const { TIMEOUTS } = require('../config/constants');
-const { guildAutoShuffle, cleanupMusicState } = require('./musicState');
+const { cleanupMusicState } = require('./musicState');
 
 const guildLeaveTimers = new Map();
 const guildLastTextChannel = new Map();
@@ -107,11 +107,6 @@ function cleanupGuild(guildId) {
 module.exports = {
   guildLeaveTimers,
   guildLastTextChannel,
-  /**
-   * @deprecated musicState.js の setAutoShuffle/isAutoShuffleEnabled を使用してください。
-   * このエクスポートは後方互換性のため維持されていますが、将来的に削除予定です。
-   */
-  guildAutoShuffle,
   startLeaveTimer,
   clearLeaveTimer,
   cleanupGuild,
