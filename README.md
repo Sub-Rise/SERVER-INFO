@@ -46,7 +46,7 @@ src/
 │   └── networkConfig.js       # ネットワーク設定
 ├── core/                       # コアロジック
 │   ├── distube.js             # DisTubeインスタンス
-│   └── distubeEvents.js       # イベントハンドラ
+│   └── distubeEvents/         # イベントハンドラ
 ├── events/                     # Discordイベント
 │   └── discord/
 │       ├── ready.js
@@ -192,7 +192,12 @@ heroku ps:scale worker=1
 
 ## 注意事項
 
-- `config.json` は開発用です。本番環境では必ず環境変数を使用してください
+- `.env` と `config.json` にはBotトークンなどの秘密情報が入るため、Gitにコミットしないでください
+- `data/managed-panels.json` は実行時に生成される管理パネル情報です。サーバーIDやチャンネルIDを含むため、Gitにコミットしないでください
+- `.agent/` はローカルの作業メモ用です。個人情報や運用情報を含む可能性があるため、Gitにコミットしないでください
+- `config.json` はローカル開発や一部ホスティング環境のフォールバック用です。本番環境では可能な限り環境変数を使用してください
+- ホスティングサービスで環境変数を使えない場合は、サーバー上で直接 `config.json` を作成し、公開リポジトリには含めないでください
+- Discord Botトークンを誤って公開した場合は、Discord Developer Portalで直ちにトークンを再生成してください
 - Spotify機能を使用する場合は [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) でアプリを作成してください
 - FFmpegが必要です。ホスティングサービスによっては別途インストールが必要です
 

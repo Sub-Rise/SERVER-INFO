@@ -3,7 +3,12 @@ node_modules/
 
 # Environment & Config (contains secrets)
 .env
+.env.*
+!.env.example
 config.json
+
+# Local agent/session notes
+.agent/
 
 # Logs (keep directory, ignore log files)
 logs/**/*.txt
@@ -18,8 +23,8 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Data files (keep directory structure)
-# data/ はGitに含める（Wispbyteへのデプロイ用）
+# Runtime data (keep directory structure only)
+data/managed-panels.json
 
 # AI/IDE rules
 .clinerules/
